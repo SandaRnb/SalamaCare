@@ -18,7 +18,6 @@ class MyLoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
     serializer_class   = MyTokenSerializer
 
-
 # ─── Inscription Médecin
 class RegisterMedecinView(APIView):
     permission_classes = [AllowAny]
