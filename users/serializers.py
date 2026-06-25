@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, ProfilMedecin, ProfilPatient, ProfilResponsable
+from .models import User
+from patients.models import ProfilPatient
+from medecins.models import ProfilMedecin
+from responsable.models import ProfilResponsable
+
 
 
 # ─── Token avec rôle
