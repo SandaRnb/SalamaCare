@@ -1,4 +1,3 @@
-# users/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,13 +13,13 @@ from .serializers import (
 )
 
 
-# Login
+# ─── Login
 class MyLoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
     serializer_class   = MyTokenSerializer
 
 
-# Inscription Médecin
+# ─── Inscription Médecin
 class RegisterMedecinView(APIView):
     permission_classes = [AllowAny]
 
@@ -32,10 +31,13 @@ class RegisterMedecinView(APIView):
                 {"message": "Médecin créé avec succès"},
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-# Inscription Patient
+# ─── Inscription Patient
 class RegisterPatientView(APIView):
     permission_classes = [AllowAny]
 
@@ -47,10 +49,13 @@ class RegisterPatientView(APIView):
                 {"message": "Patient créé avec succès"},
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-# Inscription Responsable
+# ─── Inscription Responsable
 class RegisterResponsableView(APIView):
     permission_classes = [AllowAny]
 
@@ -62,10 +67,13 @@ class RegisterResponsableView(APIView):
                 {"message": "Responsable créé avec succès"},
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-# Changement mot de passe
+# ─── Changement mot de passe
 class ChangePasswordView(APIView):
 
     def put(self, request):
@@ -78,4 +86,7 @@ class ChangePasswordView(APIView):
             return Response(
                 {"message": "Mot de passe modifié avec succès"}
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )

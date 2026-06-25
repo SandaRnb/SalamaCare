@@ -3,7 +3,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, ProfilMedecin, ProfilPatient, ProfilResponsable
 
 
-# Token avec rôle
+# ─── Token avec rôle
 class MyTokenSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -13,7 +13,7 @@ class MyTokenSerializer(TokenObtainPairSerializer):
         return token
 
 
-# Inscription Médecin
+# ─── Inscription Médecin
 class RegisterMedecinSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(
         write_only=True,
@@ -47,7 +47,10 @@ class RegisterMedecinSerializer(serializers.ModelSerializer):
         specialite = validated_data.pop("specialite")
         telephone  = validated_data.pop("telephone")
 
-        user = User.objects.create_user(**validated_data, role="medecin")
+        user = User.objects.create_user(
+            **validated_data,
+            role=User.Role.MEDECIN
+        )
         ProfilMedecin.objects.create(
             user=user,
             specialite=specialite,
@@ -56,7 +59,7 @@ class RegisterMedecinSerializer(serializers.ModelSerializer):
         return user
 
 
-# Inscription Patient
+# ─── Inscription Patient
 class RegisterPatientSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(
         write_only=True,
@@ -92,7 +95,10 @@ class RegisterPatientSerializer(serializers.ModelSerializer):
         adresse        = validated_data.pop("adresse")
         telephone      = validated_data.pop("telephone")
 
-        user = User.objects.create_user(**validated_data, role="patient")
+        user = User.objects.create_user(
+            **validated_data,
+            role=User.Role.PATIENT
+        )
         ProfilPatient.objects.create(
             user=user,
             date_naissance=date_naissance,
@@ -102,7 +108,7 @@ class RegisterPatientSerializer(serializers.ModelSerializer):
         return user
 
 
-# Inscription Responsable
+# ─── Inscription Responsable
 class RegisterResponsableSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(
         write_only=True,
@@ -134,7 +140,10 @@ class RegisterResponsableSerializer(serializers.ModelSerializer):
         validated_data.pop("password2")
         departement = validated_data.pop("departement")
 
-        user = User.objects.create_user(**validated_data, role="responsable")
+        user = User.objects.create_user(
+            **validated_data,
+            role=User.Role.RESPONSABLE
+        )
         ProfilResponsable.objects.create(
             user=user,
             departement=departement
@@ -142,16 +151,21 @@ class RegisterResponsableSerializer(serializers.ModelSerializer):
         return user
 
 
-# Changement de mot de passe
+# ─── Changement de mot de passe
 class ChangePasswordSerializer(serializers.Serializer):
     ancien_password   = serializers.CharField(write_only=True)
-    nouveau_password  = serializers.CharField(write_only=True, min_length=8)
+    nouveau_password  = serializers.CharField(
+        write_only=True,
+        min_length=8
+    )
     nouveau_password2 = serializers.CharField(write_only=True)
 
     def validate_ancien_password(self, value):
         user = self.context["request"].user
         if not user.check_password(value):
-            raise serializers.ValidationError("Ancien mot de passe incorrect.")
+            raise serializers.ValidationError(
+                "Ancien mot de passe incorrect."
+            )
         return value
 
     def validate(self, data):

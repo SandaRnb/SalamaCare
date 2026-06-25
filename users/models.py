@@ -3,12 +3,17 @@ from django.db import models
 
 
 class User(AbstractUser):
-    ROLE_CHOICES = [
-        ("responsable", "Responsable"),
-        ("medecin", "Médecin"),
-        ("patient", "Patient"),
-    ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+
+    class Role(models.TextChoices):
+        RESPONSABLE = "responsable", "Responsable"
+        MEDECIN     = "medecin",     "Médecin"
+        PATIENT     = "patient",     "Patient"
+
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.PATIENT
+    )
 
     def __str__(self):
         return f"{self.username} ({self.role})"
