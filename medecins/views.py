@@ -1,79 +1,74 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import ProfilMedecin
-from .serializers import ProfilMedecinSerializer
+from .serializers import ProfilMedecinSerializer, RegisterMedecinSerializer
 from .services import (
     get_tous_les_medecins,
     get_medecin_par_id,
-    creer_medecin,
     modifier_medecin,
     supprimer_medecin,
 )
 
 
-@require_http_methods(["GET"])
-def liste_medecins(request):
-    medecins   = get_tous_les_medecins()
-    serializer = ProfilMedecinSerializer(medecins, many=True)
-    return JsonResponse({"medecins": serializer.data})
+# ── Inscription ───────────────────────────────────────────
+class RegisterMedecinView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterMedecinSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Médecin créé avec succès"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@require_http_methods(["GET"])
-def detail_medecin(request, medecin_id):
-    medecin = get_medecin_par_id(medecin_id)
+# ── Liste ─────────────────────────────────────────────────
+class ListeMedecinsView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    if not medecin:
-        return JsonResponse({"erreur": "Médecin introuvable"}, status=404)
+    def get(self, request):
+        medecins   = get_tous_les_medecins()
+        serializer = ProfilMedecinSerializer(medecins, many=True)
+        return Response({"medecins": serializer.data})
 
-    serializer = ProfilMedecinSerializer(medecin)
-    return JsonResponse({"medecin": serializer.data})
 
+# ── Détail / Modification / Suppression ───────────────────
+class DetailMedecinView(APIView):
+    permission_classes = [IsAuthenticated]
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def creer_medecin_view(request):
-    try:
-        body      = json.loads(request.body)
-        medecin   = creer_medecin(
-            username   = body['username'],
-            password   = body['password'],
-            first_name = body.get('first_name', ''),
-            last_name  = body.get('last_name', ''),
-            email      = body.get('email', ''),
-            specialite = body['specialite'],
-            telephone  = body['telephone'],
-        )
-        serializer = ProfilMedecinSerializer(medecin)
-        return JsonResponse({"message": "Médecin créé", "medecin": serializer.data}, status=201)
-
-    except KeyError as e:
-        return JsonResponse({"erreur": f"Champ manquant : {e}"}, status=400)
-
-@csrf_exempt
-@require_http_methods(["PUT"])
-def modifier_medecin_view(request, medecin_id):
-    try:
-        body    = json.loads(request.body)
-        medecin = modifier_medecin(medecin_id, body)
-
+    def get(self, request, medecin_id):
+        medecin = get_medecin_par_id(medecin_id)
         if not medecin:
-            return JsonResponse({"erreur": "Médecin introuvable"}, status=404)
-
+            return Response(
+                {"erreur": "Médecin introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
         serializer = ProfilMedecinSerializer(medecin)
-        return JsonResponse({"message": "Médecin modifié", "medecin": serializer.data})
+        return Response({"medecin": serializer.data})
 
-    except Exception as e:
-        return JsonResponse({"erreur": str(e)}, status=400)
+    def put(self, request, medecin_id):
+        medecin = modifier_medecin(medecin_id, request.data)
+        if not medecin:
+            return Response(
+                {"erreur": "Médecin introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = ProfilMedecinSerializer(medecin)
+        return Response({
+            "message": "Médecin modifié",
+            "medecin": serializer.data
+        })
 
-@csrf_exempt
-@require_http_methods(["DELETE"])
-def supprimer_medecin_view(request, medecin_id):
-    ok = supprimer_medecin(medecin_id)
-
-    if not ok:
-        return JsonResponse({"erreur": "Médecin introuvable"}, status=404)
-
-    return JsonResponse({"message": "Médecin supprimé"})
+    def delete(self, request, medecin_id):
+        ok = supprimer_medecin(medecin_id)
+        if not ok:
+            return Response(
+                {"erreur": "Médecin introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        return Response({"message": "Médecin supprimé"})

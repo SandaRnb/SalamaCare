@@ -6,7 +6,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .serializers import (
     MyTokenSerializer,
-    RegisterMedecinSerializer,
     RegisterPatientSerializer,
     RegisterResponsableSerializer,
     ChangePasswordSerializer,
@@ -17,23 +16,6 @@ from .serializers import (
 class MyLoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
     serializer_class   = MyTokenSerializer
-
-# ─── Inscription Médecin
-class RegisterMedecinView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterMedecinSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Médecin créé avec succès"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
 
 # ─── Inscription Patient

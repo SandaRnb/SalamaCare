@@ -1,10 +1,12 @@
 from django.urls import path
-from . import views
+from .views import (
+    RegisterMedecinView,
+    ListeMedecinsView,
+    DetailMedecinView,
+)
 
 urlpatterns = [
-    path('',                    views.liste_medecins),
-    path('<int:medecin_id>/',   views.detail_medecin),
-    path('creer/',              views.creer_medecin_view),
-    path('<int:medecin_id>/modifier/',   views.modifier_medecin_view),
-    path('<int:medecin_id>/supprimer/',  views.supprimer_medecin_view),
+    path('',                  ListeMedecinsView.as_view()),   # GET
+    path('inscription/',      RegisterMedecinView.as_view()), # POST
+    path('<int:medecin_id>/', DetailMedecinView.as_view()),   # GET / PUT / DELETE
 ]
