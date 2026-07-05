@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, ProfilMedecin, ProfilPatient, ProfilResponsable
+from .models import User
+from medecins.models import ProfilMedecin
+from patients.models import ProfilPatient
+from responsables.models import ProfilResponsable
 
 
 # ─── Token avec rôle
@@ -12,8 +15,6 @@ class MyTokenSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
         return token
 
-
-# ─── Inscription Médecin
 class RegisterMedecinSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(
         write_only=True,
@@ -57,7 +58,6 @@ class RegisterMedecinSerializer(serializers.ModelSerializer):
             telephone=telephone
         )
         return user
-
 
 # ─── Inscription Patient
 class RegisterPatientSerializer(serializers.ModelSerializer):
