@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rendezvous',
     'consultations',
     'notifications',
+    'responsables'
 ]
 
 MIDDLEWARE = [
