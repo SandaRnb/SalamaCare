@@ -14,51 +14,7 @@ class MyTokenSerializer(TokenObtainPairSerializer):
         token["role"]  = user.role
         token["email"] = user.email
         return token
-
-class RegisterMedecinSerializer(serializers.ModelSerializer):
-    password  = serializers.CharField(
-        write_only=True,
-        min_length=8,
-        style={"input_type": "password"}
-    )
-    password2 = serializers.CharField(
-        write_only=True,
-        style={"input_type": "password"}
-    )
-    specialite = serializers.CharField()
-    telephone  = serializers.CharField()
-
-    class Meta:
-        model  = User
-        fields = [
-            "username", "email",
-            "password", "password2",
-            "specialite", "telephone"
-        ]
-
-    def validate(self, data):
-        if data["password"] != data["password2"]:
-            raise serializers.ValidationError(
-                {"password": "Les mots de passe ne correspondent pas."}
-            )
-        return data
-
-    def create(self, validated_data):
-        validated_data.pop("password2")
-        specialite = validated_data.pop("specialite")
-        telephone  = validated_data.pop("telephone")
-
-        user = User.objects.create_user(
-            **validated_data,
-            role=User.Role.MEDECIN
-        )
-        ProfilMedecin.objects.create(
-            user=user,
-            specialite=specialite,
-            telephone=telephone
-        )
-        return user
-
+    
 # ─── Inscription Patient
 class RegisterPatientSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(

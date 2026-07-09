@@ -1,5 +1,5 @@
-from users.models import User
 from .models import ProfilMedecin
+from users.models import User
 
 
 def get_tous_les_medecins():
