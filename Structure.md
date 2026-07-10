@@ -1,82 +1,58 @@
 salamacare_api/
 │
-├── config/
-│   ├── __init__.py
-│   ├── settings.py
-│   ├── urls.py
-│   ├── wsgi.py
-│   └── asgi.py
-│
 ├── users/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → User + ProfilMedecin + ProfilPatient + ProfilResponsable
-│   ├── serializers.py  → Token + Register (3 rôles)
-│   ├── permissions.py  → IsResponsable + IsMedecin + IsPatient + ...
-│   ├── views.py        → Login + Register (3 rôles)
-│   ├── urls.py         → /login/ /register/... /token/refresh/
-│   └── admin.py
+│   └── models.py
+│       ├── User
+│       ├── ProfilMedecin
+│       ├── ProfilPatient
+│       └── ProfilResponsable
 │
 ├── patients/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → DossierPatient
-│   ├── serializers.py  → DossierPatientSerializer
-│   ├── services.py     → logique métier (créer dossier, rechercher...)
-│   ├── views.py        → CRUD patients
-│   ├── urls.py         → /api/patients/
-│   └── admin.py
+│   └── models.py
+│       └── DossierPatient
+│           ├── patient      FK → User
+│           ├── groupe_sanguin
+│           ├── antecedents
+│           ├── allergies
+│           └── date_creation
 │
 ├── medecins/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → Disponibilite
-│   ├── serializers.py  → DisponibiliteSerializer
-│   ├── services.py     → logique métier (planning, disponibilités...)
-│   ├── views.py        → CRUD médecins
-│   ├── urls.py         → /api/medecins/
-│   └── admin.py
+│   └── models.py
+│       └── Disponibilite
+│           ├── medecin      FK → User
+│           ├── jour
+│           ├── heure_debut
+│           └── heure_fin
 │
 ├── rendezvous/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → RendezVous
-│   ├── serializers.py  → RendezVousSerializer
-│   ├── services.py     → logique métier (créer rdv, vérifier dispo...)
-│   ├── views.py        → CRUD rendez-vous
-│   ├── urls.py         → /api/rendezvous/
-│   └── admin.py
+│   └── models.py
+│       └── RendezVous
+│           ├── patient      FK → User
+│           ├── medecin      FK → User
+│           ├── date
+│           ├── heure
+│           ├── motif
+│           └── statut
 │
 ├── consultations/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → Consultation
-│   ├── serializers.py  → ConsultationSerializer
-│   ├── services.py     → logique métier (créer consultation, ordonnance...)
-│   ├── views.py        → CRUD consultations
-│   ├── urls.py         → /api/consultations/
-│   └── admin.py
+│   └── models.py
+│       └── Consultation
+│           ├── rendezvous   FK → RendezVous
+│           ├── diagnostic
+│           ├── ordonnance
+│           ├── notes
+│           └── date
 │
-├── notifications/
-│   ├── migrations/
-│   │   └── __init__.py
-│   ├── __init__.py
-│   ├── models.py       → Notification
-│   ├── serializers.py  → NotificationSerializer
-│   ├── services.py     → logique métier (envoyer, marquer lu...)
-│   ├── views.py        → liste + marquer comme lu
-│   ├── urls.py         → /api/notifications/
-│   └── admin.py
-│
-├── env/
-├── manage.py
-├── requirements.txt
-└── .env
+└── notifications/
+    └── models.py
+        └── Notification
+            ├── destinataire FK → User
+            ├── rendezvous   FK → RendezVous
+            ├── message
+            ├── type
+            ├── lu
+            └── date_envoi
+
 
 
 === LOGIQUE ET DEPENDANCES ===
