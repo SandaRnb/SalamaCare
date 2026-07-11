@@ -1,0 +1,14 @@
+[33m060ad38[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnatha-feature[m[33m, [m[1;31morigin/natha-feature[m[33m)[m Consultation par Sanda
+[33me652a61[m App RendezVous et un peu de App Patients
+[33m33b5f09[m Modification de l'app medecin
+[33mc00e160[m Merge branch 'sanda-feature' into natha-feature
+[33m72e63f6[m Création de l'app medecins
+[33me525fe5[m users/ fonctionnel avec ajour url dans setting/urls
+[33m890c6f8[m utilisation de classe role dans mousers/models au lieu de list de tuple
+[33m9098cae[m users/ implementé 2
+[33mbd5bafe[m users implementer 1
+[33md000b48[m Test avec des modeles faites
+[33md577db7[m Premiere implementation de user/model
+[33me43f1c2[m test
+[33mabbdd07[m premier commit sur la branche sanda-feature
+[33mf02205f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/jason-feature[m[33m, [m[1;32mmain[m[33m)[m premier commit
