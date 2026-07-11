@@ -46,3 +46,4 @@ class Ordonnance(models.Model):
 
     def __str__(self):
         return f"{self.medicament} — {self.posologie}"
+        
