@@ -1,117 +1,182 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 
+from users.permissions import IsMedecin, IsResponsable, IsMedecinOrResponsable
+from .models import Consultation, Ordonnance
 from .serializers import (
     ConsultationSerializer,
-    CreerConsultationSerializer,
-    AjouterOrdonnanceSerializer,
+    ConsultationCreateSerializer,
+    ConsultationUpdateSerializer,
+    OrdonnanceSerializer
 )
-from .services import (
-    get_toutes_les_consultations,
-    get_consultation_par_id,
-    get_consultations_par_patient,
-    get_consultations_par_medecin,
-    creer_consultation,
-    modifier_consultation,
-    supprimer_consultation,
-    ajouter_ordonnance,
-    supprimer_ordonnance,
-)
+from . import services
 
 
-class ListeConsultationsView(APIView):
-    permission_classes = [IsAuthenticated]
+# ─── Liste + Création ─────────────────────────────────────────
+class ConsultationListView(APIView):
+
+    def get_permissions(self):
+        # GET → médecin ou responsable
+        # POST → médecin seulement
+        if self.request.method == "POST":
+            return [IsMedecin()]
+        return [IsMedecinOrResponsable()]
 
     def get(self, request):
-        consultations = get_toutes_les_consultations()
-        serializer    = ConsultationSerializer(consultations, many=True)
-        return Response({"consultations": serializer.data})
+        user = request.user
 
+        # médecin → voit ses propres consultations
+        if user.role == "medecin":
+            consultations = services.get_consultations_medecin(
+                user.profilmedecin
+            )
 
-class CreerConsultationView(APIView):
-    permission_classes = [IsAuthenticated]
+        # responsable → voit toutes les consultations
+        else:
+            consultations = services.get_all_consultations()
+
+        serializer = ConsultationSerializer(consultations, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
-        serializer = CreerConsultationSerializer(data=request.data)
+        serializer = ConsultationCreateSerializer(data=request.data)
         if serializer.is_valid():
-            consultation, erreur = creer_consultation(
-                rdv_id     = serializer.validated_data['rdv_id'],
-                diagnostic = serializer.validated_data['diagnostic'],
-                traitement = serializer.validated_data['traitement'],
-                notes      = serializer.validated_data['notes'],
-            )
-            if erreur:
-                return Response({"erreur": erreur}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
             return Response(
-                {"message": "Consultation créée", "consultation": ConsultationSerializer(consultation).data},
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-class DetailConsultationView(APIView):
-    permission_classes = [IsAuthenticated]
+# ─── Détail + Modification ────────────────────────────────────
+class ConsultationDetailView(APIView):
+    permission_classes = [IsMedecinOrResponsable]
 
-    def get(self, request, consultation_id):
-        consultation = get_consultation_par_id(consultation_id)
-        if not consultation:
-            return Response({"erreur": "Consultation introuvable"}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        consultation = services.get_consultation_by_id(pk)
+        if consultation is None:
+            return None
+        return consultation
+
+    def get(self, request, pk):
+        consultation = self.get_object(pk)
+        if consultation is None:
+            return Response(
+                {"error": "Consultation introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         serializer = ConsultationSerializer(consultation)
-        return Response({"consultation": serializer.data})
+        return Response(serializer.data)
 
-    def put(self, request, consultation_id):
-        consultation = modifier_consultation(consultation_id, request.data)
-        if not consultation:
-            return Response({"erreur": "Consultation introuvable"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ConsultationSerializer(consultation)
-        return Response({"message": "Consultation modifiée", "consultation": serializer.data})
+    def put(self, request, pk):
+        # seul le médecin peut modifier
+        if request.user.role != "medecin":
+            return Response(
+                {"error": "Seul le médecin peut modifier une consultation."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-    def delete(self, request, consultation_id):
-        ok = supprimer_consultation(consultation_id)
-        if not ok:
-            return Response({"erreur": "Consultation introuvable"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"message": "Consultation supprimée"})
+        consultation = self.get_object(pk)
+        if consultation is None:
+            return Response(
+                {"error": "Consultation introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ConsultationUpdateSerializer(
+            consultation,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-class ConsultationsPatientView(APIView):
-    permission_classes = [IsAuthenticated]
+# ─── Consultations d'un patient ───────────────────────────────
+class ConsultationPatientView(APIView):
+    permission_classes = [IsMedecinOrResponsable]
 
     def get(self, request, patient_id):
-        consultations = get_consultations_par_patient(patient_id)
+        from patients.models import ProfilPatient
+        try:
+            patient = ProfilPatient.objects.get(id=patient_id)
+        except ProfilPatient.DoesNotExist:
+            return Response(
+                {"error": "Patient introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        consultations = services.get_consultations_patient(patient)
         serializer    = ConsultationSerializer(consultations, many=True)
-        return Response({"consultations": serializer.data})
+        return Response(serializer.data)
 
 
-class ConsultationsMedecinView(APIView):
-    permission_classes = [IsAuthenticated]
+# ─── Ordonnances d'une consultation ──────────────────────────
+class OrdonnanceListView(APIView):
+    permission_classes = [IsMedecinOrResponsable]
 
-    def get(self, request, medecin_id):
-        consultations = get_consultations_par_medecin(medecin_id)
-        serializer    = ConsultationSerializer(consultations, many=True)
-        return Response({"consultations": serializer.data})
+    def get(self, request, consultation_id):
+        try:
+            consultation = Consultation.objects.get(id=consultation_id)
+        except Consultation.DoesNotExist:
+            return Response(
+                {"error": "Consultation introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-
-class OrdonnanceView(APIView):
-    permission_classes = [IsAuthenticated]
+        ordonnances = consultation.ordonnances.all()
+        serializer  = OrdonnanceSerializer(ordonnances, many=True)
+        return Response(serializer.data)
 
     def post(self, request, consultation_id):
-        serializer = AjouterOrdonnanceSerializer(data=request.data)
-        if serializer.is_valid():
-            ordonnance, erreur = ajouter_ordonnance(
-                consultation_id = consultation_id,
-                medicament      = serializer.validated_data['medicament'],
-                posologie       = serializer.validated_data['posologie'],
-                duree           = serializer.validated_data['duree'],
+        if request.user.role != "medecin":
+            return Response(
+                {"error": "Seul le médecin peut ajouter une ordonnance."},
+                status=status.HTTP_403_FORBIDDEN
             )
-            if erreur:
-                return Response({"erreur": erreur}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"message": "Ordonnance ajoutée"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            consultation = Consultation.objects.get(id=consultation_id)
+        except Consultation.DoesNotExist:
+            return Response(
+                {"error": "Consultation introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-    def delete(self, request, consultation_id, ordonnance_id):
-        ok = supprimer_ordonnance(ordonnance_id)
-        if not ok:
-            return Response({"erreur": "Ordonnance introuvable"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"message": "Ordonnance supprimée"})
+        serializer = OrdonnanceSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(consultation=consultation)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+# ─── Supprimer une ordonnance ─────────────────────────────────
+class OrdonnanceDeleteView(APIView):
+    permission_classes = [IsMedecin]
+
+    def delete(self, request, pk):
+        supprime = services.supprimer_ordonnance(pk)
+        if supprime:
+            return Response(
+                {"message": "Ordonnance supprimée."},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        return Response(
+            {"error": "Ordonnance introuvable."},
+            status=status.HTTP_404_NOT_FOUND
+        )
