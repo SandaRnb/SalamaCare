@@ -26,9 +26,9 @@ class RegisterPatientSerializer(serializers.ModelSerializer):
         write_only=True,
         style={"input_type": "password"}
     )
-    date_naissance = serializers.DateField()
-    adresse        = serializers.CharField()
-    telephone      = serializers.CharField()
+    date_naissance = serializers.DateField(write_only=True)
+    adresse        = serializers.CharField(write_only=True)
+    telephone      = serializers.CharField(write_only=True)
 
     class Meta:
         model  = User
@@ -75,7 +75,7 @@ class RegisterResponsableSerializer(serializers.ModelSerializer):
         write_only=True,
         style={"input_type": "password"}
     )
-    departement = serializers.CharField()
+    departement = serializers.CharField(write_only=True)
 
     class Meta:
         model  = User

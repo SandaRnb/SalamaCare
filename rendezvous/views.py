@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsResponsable
 
 from .serializers import (
     RendezVousSerializer,
@@ -32,7 +33,7 @@ class ListeRendezVousView(APIView):
 
 # ── Créer un RDV ──────────────────────────────────────────
 class CreerRendezVousView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsResponsable]
 
     def post(self, request):
         serializer = CreerRendezVousSerializer(data=request.data)
@@ -64,6 +65,8 @@ class DetailRendezVousView(APIView):
         return Response({"rendezvous": serializer.data})
 
     def delete(self, request, rdv_id):
+        if request.user.role != 'responsable':
+            return Response({"erreur": "Seul un responsable peut supprimer un rendez-vous"}, status=status.HTTP_403_FORBIDDEN)
         ok = supprimer_rendezvous(rdv_id)
         if not ok:
             return Response({"erreur": "RDV introuvable"}, status=status.HTTP_404_NOT_FOUND)

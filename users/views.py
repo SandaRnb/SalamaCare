@@ -1,6 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+#ajout d'import
+from rest_framework import generics, status
+from .serializers import (
+    RegisterResponsableSerializer,
+    RegisterPatientSerializer,
+    ChangePasswordSerializer,
+)
+from users.permissions import IsResponsable
 
 
 class MyLoginView(APIView):
@@ -51,3 +60,29 @@ class MyLoginView(APIView):
                 data['profil'] = None
 
         return Response(data)
+    
+
+#ajout des classes pour l'inscription des patients et responsables, ainsi que le changement de mot de passe
+class RegisterResponsableView(generics.CreateAPIView):
+    permission_classes = [IsResponsable]  # ← Seul un responsable ou un admin peut créer un autre responsable
+    serializer_class = RegisterResponsableSerializer
+
+
+class RegisterPatientView(generics.CreateAPIView):
+    permission_classes = [IsResponsable]
+    serializer_class = RegisterPatientSerializer
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Mot de passe modifié avec succès."},
+            status=status.HTTP_200_OK
+        )

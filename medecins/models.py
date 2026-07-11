@@ -5,7 +5,8 @@ from django.conf import settings
 class ProfilMedecin(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='medecin'
     )
     specialite = models.CharField(max_length=100)
     telephone  = models.CharField(max_length=20)
