@@ -29,7 +29,6 @@ INSTALLED_APPS = [
     'rendezvous',
     'consultations',
     'notifications',
-    'responsables',
 ]
 
 MIDDLEWARE = [
@@ -108,6 +107,6 @@ SIMPLE_JWT = {                                             # ← ajouté ✅
 
 # ─── CORS ─────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [                                   # ← ajouté ✅
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'http://localhost:3000',    # React dev
+    'http://127.0.0.1:3000',
 ]
