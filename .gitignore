@@ -2,15 +2,18 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Environnement virtuel
+env/
+venv/
 
 # Django
 *.sqlite3
 media/
-.env
 
-# Env virtuel
-venv/
-env/
+# Variables d'environnement
+.env
 
 # IDE
 .idea/

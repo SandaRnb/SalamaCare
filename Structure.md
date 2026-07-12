@@ -74,3 +74,5 @@ consultations/  → ce qui se passe pendant le rendez-vous
 
 notifications/  → alertes automatiques → "votre rendez-vous est confirmé" 
 → "rappel dans 24h" → dépend de : rendezvous + consultations
+
+test 123

@@ -1,91 +1,99 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+#ajout d'import
+from rest_framework import generics, status
 from .serializers import (
-    MyTokenSerializer,
-    RegisterMedecinSerializer,
-    RegisterPatientSerializer,
     RegisterResponsableSerializer,
+    RegisterPatientSerializer,
     ChangePasswordSerializer,
+    MyTokenSerializer,
 )
+from users.permissions import IsResponsable
 
 
-# ─── Login
-class MyLoginView(TokenObtainPairView):
+class MyTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
-    serializer_class   = MyTokenSerializer
-
-# ─── Inscription Médecin
-class RegisterMedecinView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterMedecinSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Médecin créé avec succès"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    serializer_class = MyTokenSerializer
 
 
-# ─── Inscription Patient
-class RegisterPatientView(APIView):
+class MyTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = RegisterPatientSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Patient créé avec succès"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
+class MyLoginView(APIView):
+    permission_classes = [IsAuthenticated]
 
-# ─── Inscription Responsable
-class RegisterResponsableView(APIView):
+    def get(self, request):
+        user = request.user  # ← Django donne l'user connecté automatiquement
+
+        data = {
+            "id":       user.id,
+            "username": user.username,
+            "email":    user.email,
+            "role":     user.role,
+        }
+
+        # Selon le rôle → on ajoute le bon profil
+        if user.role == 'medecin':
+            try:
+                profil = user.medecin  # ← related_name='medecin'
+                data['profil'] = {
+                    "profil_id":  profil.id,
+                    "specialite": profil.specialite,
+                    "telephone":  profil.telephone,
+                }
+            except:
+                data['profil'] = None
+
+        elif user.role == 'patient':
+            try:
+                profil = user.patient  # ← related_name='patient'
+                data['profil'] = {
+                    "profil_id":     profil.id,
+                    "date_naissance": str(profil.date_naissance),
+                    "adresse":        profil.adresse,
+                    "telephone":      profil.telephone,
+                }
+            except:
+                data['profil'] = None
+
+        elif user.role == 'responsable':
+            try:
+                profil = user.responsable  # ← related_name='responsable'
+                data['profil'] = {
+                    "profil_id":   profil.id,
+                    "departement": profil.departement,
+                }
+            except:
+                data['profil'] = None
+
+        return Response(data)
+    
+
+#ajout des classes pour l'inscription des patients et responsables, ainsi que le changement de mot de passe
+class RegisterResponsableView(generics.CreateAPIView):
     permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterResponsableSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Responsable créé avec succès"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    serializer_class = RegisterResponsableSerializer
 
 
-# ─── Changement mot de passe
+class RegisterPatientView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = RegisterPatientSerializer
+
 class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def put(self, request):
         serializer = ChangePasswordSerializer(
             data=request.data,
             context={"request": request}
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Mot de passe modifié avec succès"}
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            {"detail": "Mot de passe modifié avec succès."},
+            status=status.HTTP_200_OK
         )
