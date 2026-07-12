@@ -5,10 +5,12 @@ from .views import (
     MarquerLuView,
     MarquerToutLuView,
     SupprimerNotificationView,
+    EnvoyerNotificationView, 
 )
 
 urlpatterns = [
     path('',                          ListeNotificationsView.as_view()),    # GET
+    path('envoyer/',                  EnvoyerNotificationView.as_view()),
     path('non-lues/',                 NotificationsNonLuesView.as_view()),  # GET
     path('tout-lu/',                  MarquerToutLuView.as_view()),         # PUT
     path('<int:notification_id>/lu/', MarquerLuView.as_view()),             # PUT

@@ -3,6 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from users.permissions import IsResponsable
+from users.models import User
+from .models import Notification
+
 from .serializers import NotificationSerializer
 from .services import (
     get_notifications_user,
@@ -67,3 +71,40 @@ class SupprimerNotificationView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         return Response({"message": "Notification supprimée"})
+
+
+
+class EnvoyerNotificationView(APIView):
+    permission_classes = [IsResponsable]
+
+    def post(self, request):
+        medecin_id = request.data.get('medecin_id')
+        titre      = request.data.get('titre')
+        message    = request.data.get('message')
+        type_notif = request.data.get('type', Notification.Type.SYSTEME)
+
+        if not medecin_id or not titre or not message:
+            return Response(
+                {"erreur": "medecin_id, titre et message sont requis"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            medecin_user = User.objects.get(id=medecin_id, role='medecin')
+        except User.DoesNotExist:
+            return Response(
+                {"erreur": "Médecin introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        notification = Notification.objects.create(
+            destinataire = medecin_user,
+            type         = type_notif,
+            titre        = titre,
+            message      = message,
+        )
+        serializer = NotificationSerializer(notification)
+        return Response(
+            {"message": "Notification envoyée", "notification": serializer.data},
+            status=status.HTTP_201_CREATED
+        )
