@@ -46,4 +46,12 @@ class CreerRendezVousSerializer(serializers.Serializer):
 
 # ── Modification statut ───────────────────────────────────
 class ModifierStatutSerializer(serializers.Serializer):
-    statut = serializers.ChoiceField(choices=RendezVous.Statut.choices)
+    statut     = serializers.ChoiceField(choices=RendezVous.Statut.choices, required=False)
+    date_heure = serializers.DateTimeField(required=False)
+
+    def validate(self, data):
+        if not data.get('statut') and not data.get('date_heure'):
+            raise serializers.ValidationError(
+                "Il faut fournir au moins un champ : 'statut' ou 'date_heure'."
+            )
+        return data

@@ -3,7 +3,7 @@
 from pathlib import Path
 from datetime import timedelta
 
-BASE_DIR = Path(_file_).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-58%a89xx+)&=$m6pafbj+w8s$id&z79s-%dru&d8grsk@*z((*'
 
@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'rendezvous',
     'consultations',
     'notifications',
+    'responsables', 
 ]
 
 MIDDLEWARE = [

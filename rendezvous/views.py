@@ -4,11 +4,14 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsResponsable
 
+from .models import RendezVous
 from .serializers import (
     RendezVousSerializer,
     CreerRendezVousSerializer,
     ModifierStatutSerializer,
 )
+
+from . import services
 from .services import (
     get_tous_les_rendezvous,
     get_rendezvous_par_id,
@@ -20,16 +23,24 @@ from .services import (
     supprimer_rendezvous,
 )
 
-
 # ── Liste tous les RDV ────────────────────────────────────
 class ListeRendezVousView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        rdvs       = get_tous_les_rendezvous()
+        user = request.user
+
+        if user.role == 'responsable':
+            rdvs = get_tous_les_rendezvous()
+        elif user.role == 'medecin':
+            rdvs = get_rendezvous_par_medecin(user.medecin.id)
+        elif user.role == 'patient':
+            rdvs = get_rendezvous_par_patient(user.patient.id)
+        else:
+            rdvs = RendezVous.objects.none()
+
         serializer = RendezVousSerializer(rdvs, many=True)
         return Response({"rendezvous": serializer.data})
-
 
 # ── Créer un RDV ──────────────────────────────────────────
 class CreerRendezVousView(APIView):
@@ -75,20 +86,31 @@ class DetailRendezVousView(APIView):
 
 # ── Modifier statut ───────────────────────────────────────
 class ModifierStatutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsResponsable]
 
     def put(self, request, rdv_id):
         serializer = ModifierStatutSerializer(data=request.data)
-        if serializer.is_valid():
-            rdv = modifier_statut(rdv_id, serializer.validated_data['statut'])
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+
+        # Cas : report de date
+        if 'date_heure' in data:
+            rdv, erreur = services.reporter_rendezvous(rdv_id, data['date_heure'])
+            if erreur:
+                return Response({"erreur": erreur}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Cas : changement de statut
+        if 'statut' in data:
+            rdv = modifier_statut(rdv_id, data['statut'])
             if not rdv:
                 return Response({"erreur": "RDV introuvable"}, status=status.HTTP_404_NOT_FOUND)
-            return Response({
-                "message": "Statut modifié",
-                "rendezvous": RendezVousSerializer(rdv).data
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        return Response({
+            "message": "Rendez-vous modifié",
+            "rendezvous": RendezVousSerializer(rdv).data
+        })
 
 # ── RDV par patient ───────────────────────────────────────
 class RendezVousPatientView(APIView):

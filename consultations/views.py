@@ -29,7 +29,7 @@ class ConsultationListView(APIView):
         # médecin → voit ses propres consultations
         if user.role == "medecin":
             consultations = services.get_consultations_medecin(
-                user.profilmedecin
+                user.medecin
             )
 
         # responsable → voit toutes les consultations

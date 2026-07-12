@@ -68,6 +68,27 @@ def annuler_rendezvous(rdv_id):
     """Annule un RDV"""
     return modifier_statut(rdv_id, RendezVous.Statut.ANNULE)
 
+def reporter_rendezvous(rdv_id, nouvelle_date_heure):
+    """Change la date/heure d'un RDV (report)"""
+    try:
+        rdv = RendezVous.objects.get(id=rdv_id)
+
+        # Vérifier conflit avec le même médecin à la nouvelle date
+        conflit = RendezVous.objects.filter(
+            medecin    = rdv.medecin,
+            date_heure = nouvelle_date_heure,
+            statut__in = ['en_attente', 'confirme']
+        ).exclude(id=rdv_id).exists()
+
+        if conflit:
+            return None, "Le médecin a déjà un rendez-vous à cette heure"
+
+        rdv.date_heure = nouvelle_date_heure
+        rdv.save()
+        return rdv, None
+    except RendezVous.DoesNotExist:
+        return None, "RDV introuvable"
+
 
 def supprimer_rendezvous(rdv_id):
     try:
