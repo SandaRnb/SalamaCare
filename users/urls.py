@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import MyLoginView
+from .views import LoginView, MonProfilView
 
 urlpatterns = [
-    path("me/", MyLoginView.as_view())
+    path('login/', LoginView.as_view()),  # POST
+    path('moi/',   MonProfilView.as_view()),  # GET
 ]
